@@ -88,87 +88,80 @@ var g_tableAlpha =
 var w = 4;
 function draw_line(y)
 {
-  ctx.fillStyle = 'yellow';
-  ctx.fillRect(0, (w)*6*y, w*256, w);
+    ctx.fillStyle = 'yellow';
+    ctx.fillRect(0, (w)*6*y, w*256, w);
 }
 function draw_sq(x, y)
 {
-  ctx.fillStyle = 'green';
-  ctx.fillRect((w)*x, (w)*6*y, w, w);
+    ctx.fillStyle = 'green';
+    ctx.fillRect((w)*x, (w)*6*y, w, w);
 }
 
 
 function draw_sq_compute(x, y)
 {
-  ctx.fillStyle = '#66ff99';
-  ctx.fillRect((w)*x, (w)*6*y+w, w, w);
+    ctx.fillStyle = '#66ff99';
+    ctx.fillRect((w)*x, (w)*6*y+w, w, w);
 }
 function draw_sq_compute2(x, y)
 {
-  ctx.fillStyle = 'red';
-  ctx.fillRect((w)*x, (w)*6*y+w, w, w);
+    ctx.fillStyle = 'red';
+    ctx.fillRect((w)*x, (w)*6*y+w, w, w);
+}
+function getLeft(diff)
+{
+    return Math.floor((256 - (diff+1)) / 2);
 }
 function draw_line_compute(diff)
 {
-  var y = 23;
-  ctx.fillStyle = 'yellow';
-  ctx.fillRect(0, (w)*6*y, w*256, w);
-  ctx.fillStyle = '#66ff99';
-  var left = Math.floor((256 - (diff+1)) / 2);
-  ctx.fillRect(w*left, (w)*6*y, w*(diff+1), w);
-  var step = (diff) / 15;
-  var values = [];
-  for (var i=0; i<16; ++i)
-  {
-    var l = Math.round(left + step*i);
-    //draw_sq_compute(l, y);
-    draw_sq(l, y);
-    values.push(l);
-  }
-  return values;
+    var y = 23;
+    var left = getLeft(diff);
+    ctx.fillStyle = 'yellow';
+    ctx.fillRect(0, (w)*6*y, w*256, w);
+    ctx.fillStyle = '#66ff99';
+    ctx.fillRect(w*left, (w)*6*y, w*(diff+1), w);
+}
+function draw_values_compute(values)
+{
+    var y = 23;
+    for (var i=0; i<values.length; ++i)
+        draw_sq(values[i], y);
 }
 
-
-function drawCanvas() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = 'green';
-  //ctx.fillRect(10, 10, 100, 100);
-  for (var i=0; i<g_tableAlpha.length; ++i)
-  {
-      var tab = g_tableAlpha[i];
-    tab.sort((a, b) => a - b);
-    var diff = tab[tab.length-1] - tab[0];
-    var min = tab[0];
-    var step = 255.0 / diff;
-    draw_line(i);
-    for (var j=0; j<tab.length; ++j)
+function drawCanvas()
+{
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'green';
+    for (var i=0; i<g_tableAlpha.length; ++i)
     {
-      var v = tab[j] - min;
-      v = Math.round(v * step);
-      draw_sq(v, i);
+        var tab = g_tableAlpha[i];
+        tab.sort((a, b) => a - b);
+        var diff = tab[tab.length-1] - tab[0];
+        var min = tab[0];
+        var step = 255.0 / diff;
+        draw_line(i);
+        for (var j=0; j<tab.length; ++j)
+        {
+            var v = tab[j] - min;
+            v = Math.round(v * step);
+            draw_sq(v, i);
+        }
     }
-  }
 }
 window.addEventListener('load', drawCanvas);
+
+function generateValues(diff)
+{
+    var left = getLeft(diff);
+    var step = diff / 15, values = [];
+    for (var i=0; i<16; ++i)
+        values.push(Math.round(left + step*i));
+    return values;
+}
 
 function clamp255(v)
 {
     return (v > 255) ? 255 : (v < 0 ? 0 : v);
-}
-
-function findMinDiff(x, xx)
-{
-    var diff = 999999999, pos = 0;
-    for (var i=0; i<xx.length; ++i)
-    {
-        var d = (xx[i] - x) * (xx[i] - x);
-        if (d < diff)
-        {
-            diff = d;
-            pos = i;
-        }
-    }
-    return [diff, pos];
 }
 
 function findMinDiff2(values, xx)
@@ -206,12 +199,13 @@ function findBestMatch(diff, values, matchLeft, matchRight, table, mult)
         tab.sort((a, b) => a - b);
 
         // needed range [p0 .. p1]
-        var p0 = Math.floor((256 - (diff+1)) / 2);
+        var p0 = getLeft(diff);
         var p1 = p0 + diff;
         for (var m = (mult>=1 ? mult : 1); m <= (mult>=1 ? mult : 15); ++m)
         {
             var tabm = tab.map((x) => x * m);
             for (var o = p0; o < p1+1; ++o)
+            //for (var o = p0; o < p0 + diff/3; ++o)
             {
                 var base = o;
                 if (base > 255)
@@ -223,12 +217,12 @@ function findBestMatch(diff, values, matchLeft, matchRight, table, mult)
                     if (xx.length==0 || xx[xx.length-1] != x)
                         xx.push(x);
                 }
-                var [diff, res] = findMinDiff2(values, xx);
+                var [mdiff, res] = findMinDiff2(values, xx);
                 var leftOk = !matchLeft || (res[0] == values[0]);
                 var rightOk = !matchRight || (res[res.length-1] == values[values.length-1]);
-                if (leftOk && rightOk && diff < mindiff)
+                if (leftOk && rightOk && mdiff < mindiff)
                 {
-                    mindiff = diff;
+                    mindiff = mdiff;
                     minres = res;
                     minbase = base;
                     minm = m;
@@ -250,7 +244,9 @@ function compute()
     var diff = Math.max(Math.min(parseInt(computeValue.value), 255), 0);
     var table = parseInt(form.table.value);
     computeValue.value = diff;
-    var values = draw_line_compute(diff);
+    var values = generateValues(diff);
+    draw_line_compute(diff);
+    draw_values_compute(values);
 
     var matchLeft = !!matchLeftBox.checked;
     var matchRight = !!matchRightBox.checked;
