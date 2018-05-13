@@ -3,11 +3,14 @@
 
 <canvas style="border: 0px solid black" id="canvas" width="1280" height="600" class="playable-canvas"></canvas>
 
+<div id="out" style="height: 100px; font: 14px Arial"></div>
+
 <form>
 <br/><input type="text" name="val" value="128"> <input type="button" value="Compute"><br/>
 
 <table>
 <tr>
+<td align="center"><input type="radio" name="table" id="table16" value="-1" checked></td>
 <td align="center"><input type="radio" name="table" id="table0"  value="0"></td>
 <td align="center"><input type="radio" name="table" id="table1"  value="1"></td>
 <td align="center"><input type="radio" name="table" id="table2"  value="2"></td>
@@ -26,6 +29,7 @@
 <td align="center"><input type="radio" name="table" id="table15" value="15"></td>
 </tr>
 <tr>
+<td align="center"><label for="table16">Any</label></td>
 <td align="center"><label for="table0">0</label></td>
 <td align="center"><label for="table1">1</label></td>
 <td align="center"><label for="table2">2</label></td>
@@ -190,47 +194,50 @@ function findMinDiff2(values, xx)
     return [diff, res];
 }
 
-function findBestMatch(diff, values, table, matchLeft, matchRight)
+function findBestMatch(diff, values, matchLeft, matchRight, table, mult)
 {
-    var tab = g_tableAlpha[table];
-    var mindiff = 9999999999, minres = [], minxx = [];
-    values = values.slice();
-    values.sort((a, b) => a - b);
-    tab = tab.slice();
-    tab.sort((a, b) => a - b);
-
-    // needed range [p0 .. p1]
-    var p0 = Math.floor((256 - (diff+1)) / 2);
-    var p1 = p0 + diff;
-    for (var m = 1; m < 16; ++m)
+    var mindiff = 9999999999, minres = [], minbase, minm, mint;
+    for (var t=(table>=0 ? table : 0); t <= (table>=0 ? table : 15); ++t)
     {
-        var tabm = tab.map((x) => x * m);
-        for (var o = p0; o < p1+1; ++o)
-        //for (var o = -1; o < (diff+1)/2; ++o)
+        var tab = g_tableAlpha[t];
+        values = values.slice();
+        values.sort((a, b) => a - b);
+        tab = tab.slice();
+        tab.sort((a, b) => a - b);
+
+        // needed range [p0 .. p1]
+        var p0 = Math.floor((256 - (diff+1)) / 2);
+        var p1 = p0 + diff;
+        for (var m = (mult>=1 ? mult : 1); m <= (mult>=1 ? mult : 15); ++m)
         {
-            // clamp255((base_codeword)+modifier*multiplier)
-            //var base = Math.floor((p0 + p1 + 1) / 2) + o;
-            var base = o;
-            if (base > 255)
-                continue;
-            var xx = [];
-            for (var i = 0; i < 8; ++i)
+            var tabm = tab.map((x) => x * m);
+            for (var o = p0; o < p1+1; ++o)
             {
-                var x = clamp255(base + tabm[i]);
-                if (xx.length==0 || xx[xx.length-1] != x)
-                    xx.push(x);
-            }
-            var [diff, res] = findMinDiff2(values, xx);
-            var leftOk = !matchLeft || (res[0] == values[0]);
-            var rightOk = !matchRight || (res[res.length-1] == values[values.length-1]);
-            if (leftOk && rightOk && diff < mindiff)
-            {
-                mindiff = diff;
-                minres = res;
+                var base = o;
+                if (base > 255)
+                    continue;
+                var xx = [];
+                for (var i = 0; i < 8; ++i)
+                {
+                    var x = clamp255(base + tabm[i]);
+                    if (xx.length==0 || xx[xx.length-1] != x)
+                        xx.push(x);
+                }
+                var [diff, res] = findMinDiff2(values, xx);
+                var leftOk = !matchLeft || (res[0] == values[0]);
+                var rightOk = !matchRight || (res[res.length-1] == values[values.length-1]);
+                if (leftOk && rightOk && diff < mindiff)
+                {
+                    mindiff = diff;
+                    minres = res;
+                    minbase = base;
+                    minm = m;
+                    mint = t;
+                }
             }
         }
     }
-    return {mindiff, minres};
+    return {mindiff, minres, minbase, minm, mint};
 }
 
 function refresh()
@@ -243,25 +250,20 @@ function compute()
     var diff = Math.max(Math.min(parseInt(computeValue.value), 255), 0);
     var table = parseInt(form.table.value);
     computeValue.value = diff;
-    ctx.fillStyle = 'black';
-    ctx.font = "14px Arial";
-    ctx.fillText("Compute for diff: "+diff,10,105*w);
     var values = draw_line_compute(diff);
 
     var matchLeft = !!matchLeftBox.checked;
     var matchRight = !!matchRightBox.checked;
-    if (!(table >= 0 && table < 16))
-        return;
 
-    var {mindiff, minres} = findBestMatch(diff, values, table, matchLeft, matchRight);
+    var {mindiff, minres, minbase, minm, mint} = findBestMatch(diff, values, matchLeft, matchRight, table);
     for (var i=0; i<minres.length; ++i)
     {
         var y = 23;
         draw_sq_compute2(minres[i], y);
     }
-    ctx.fillStyle = 'black';
-    ctx.font = "14px Arial";
-    ctx.fillText("err: "+mindiff,10,115*w);
+    var res_str = 'Compute for diff: '+diff+'\nerr: '+mindiff+'\ntable: '+mint+'\nbase: '+minbase+'\nmult: '+minm;
+    var out = document.getElementById('out');
+    out.innerHTML = res_str.replace(/\n/g, '<br/>');
 }
 computeButton.onclick = refresh;
 
