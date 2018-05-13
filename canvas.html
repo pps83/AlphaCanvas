@@ -167,15 +167,44 @@ function findMinDiff(x, xx)
     return [diff, pos];
 }
 
+function findMinDiff2(values, xx)
+{
+    var diff = 0;
+    var xx_r = xx.length-1, p = 0, res = [];
+    for (var i=0; i<values.length; ++i)
+    {
+        var d = (xx[p] - values[i]) * (xx[p] - values[i]);
+        while (p < xx_r) // find left most in xx for for min err of values[i]
+        {
+            d1 = (xx[p+1] - values[i]) * (xx[p+1] - values[i]);
+            if (d1 > d)
+                break;
+            d = d1;
+            p++;
+        }
+        diff += d;
+        //res.push(xx[p]);
+        if (res.length == 0 || res[res.length-1] != xx[p])
+            res.push(xx[p]);
+    }
+    return [diff, res];
+}
+
 function findBestMatch(diff, values, table, matchLeft, matchRight)
 {
     var tab = g_tableAlpha[table];
     var mindiff = 9999999999, minres = [], minxx = [];
+    values = values.slice();
+    values.sort((a, b) => a - b);
+    tab = tab.slice();
+    tab.sort((a, b) => a - b);
+
     // needed range [p0 .. p1]
     var p0 = Math.floor((256 - (diff+1)) / 2);
     var p1 = p0 + diff;
     for (var m = 1; m < 16; ++m)
     {
+        var tabm = tab.map((x) => x * m);
         for (var o = p0; o < p1+1; ++o)
         //for (var o = -1; o < (diff+1)/2; ++o)
         {
@@ -187,28 +216,21 @@ function findBestMatch(diff, values, table, matchLeft, matchRight)
             var xx = [];
             for (var i = 0; i < 8; ++i)
             {
-                var idx = tab[i];
-                var x = clamp255(base + idx * m);
-                xx.push(x);
+                var x = clamp255(base + tabm[i]);
+                if (xx.length==0 || xx[xx.length-1] != x)
+                    xx.push(x);
             }
-            var diff = 0, res = [];
-            for (i=0; i<values.length; ++i)
-            {
-                var d = findMinDiff(values[i], xx);
-                res.push(d);
-                diff += d[0];
-            }
-            var leftOk = !matchLeft || res[0][0] == 0;
-            var rightOk = !matchRight || res[values.length-1][0] == 0;
+            var [diff, res] = findMinDiff2(values, xx);
+            var leftOk = !matchLeft || (res[0] == values[0]);
+            var rightOk = !matchRight || (res[res.length-1] == values[values.length-1]);
             if (leftOk && rightOk && diff < mindiff)
             {
                 mindiff = diff;
                 minres = res;
-                minxx = xx;
             }
         }
     }
-    return {mindiff, minres, minxx};
+    return {mindiff, minres};
 }
 
 function refresh()
@@ -231,11 +253,11 @@ function compute()
     if (!(table >= 0 && table < 16))
         return;
 
-    var {mindiff, minres, minxx} = findBestMatch(diff, values, table, matchLeft, matchRight);
+    var {mindiff, minres} = findBestMatch(diff, values, table, matchLeft, matchRight);
     for (var i=0; i<minres.length; ++i)
     {
         var y = 23;
-        draw_sq_compute2(minxx[minres[i][1]], y);
+        draw_sq_compute2(minres[i], y);
     }
     ctx.fillStyle = 'black';
     ctx.font = "14px Arial";
