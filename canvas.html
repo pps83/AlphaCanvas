@@ -1,0 +1,256 @@
+<html>
+<body>
+
+<canvas style="border: 0px solid black" id="canvas" width="1280" height="600" class="playable-canvas"></canvas>
+
+<form>
+<br/><input type="text" name="val" value="128"> <input type="button" value="Compute"><br/>
+
+<table>
+<tr>
+<td align="center"><input type="radio" name="table" id="table0"  value="0"></td>
+<td align="center"><input type="radio" name="table" id="table1"  value="1"></td>
+<td align="center"><input type="radio" name="table" id="table2"  value="2"></td>
+<td align="center"><input type="radio" name="table" id="table3"  value="3"></td>
+<td align="center"><input type="radio" name="table" id="table4"  value="4"></td>
+<td align="center"><input type="radio" name="table" id="table5"  value="5"></td>
+<td align="center"><input type="radio" name="table" id="table6"  value="6"></td>
+<td align="center"><input type="radio" name="table" id="table7"  value="7"></td>
+<td align="center"><input type="radio" name="table" id="table8"  value="8"></td>
+<td align="center"><input type="radio" name="table" id="table9"  value="9"></td>
+<td align="center"><input type="radio" name="table" id="table10" value="10"></td>
+<td align="center"><input type="radio" name="table" id="table11" value="11"></td>
+<td align="center"><input type="radio" name="table" id="table12" value="12"></td>
+<td align="center"><input type="radio" name="table" id="table13" value="13"></td>
+<td align="center"><input type="radio" name="table" id="table14" value="14"></td>
+<td align="center"><input type="radio" name="table" id="table15" value="15"></td>
+</tr>
+<tr>
+<td align="center"><label for="table0">0</label></td>
+<td align="center"><label for="table1">1</label></td>
+<td align="center"><label for="table2">2</label></td>
+<td align="center"><label for="table3">3</label></td>
+<td align="center"><label for="table4">4</label></td>
+<td align="center"><label for="table5">5</label></td>
+<td align="center"><label for="table6">6</label></td>
+<td align="center"><label for="table7">7</label></td>
+<td align="center"><label for="table8">8</label></td>
+<td align="center"><label for="table9">9</label></td>
+<td align="center"><label for="table10">10</label></td>
+<td align="center"><label for="table11">11</label></td>
+<td align="center"><label for="table12">12</label></td>
+<td align="center"><label for="table13">13</label></td>
+<td align="center"><label for="table14">14</label></td>
+<td align="center"><label for="table15">15</label></td>
+</tr>
+</table>
+</form>
+
+<input type="checkbox" id="matchLeft" name="matchLeft" checked><label for="matchLeft">Match Left</label>
+<br/>
+<input type="checkbox" id="matchRight" name="matchRight"><label for="matchRight">Match Right</label>
+
+<script type="text/javascript">
+
+var computeButton = document.querySelector('input[type="button"]');
+var computeValue = document.querySelector('input[type="text"]');
+var form = document.querySelector('form');
+var matchLeftBox = document.getElementById('matchLeft');
+var matchRightBox = document.getElementById('matchRight');
+
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext("2d");
+
+var g_tableAlpha =
+[
+    [ -3, -6, -9, -15, 2, 5, 8, 14 ],
+    [ -3, -7, -10,-13, 2, 6, 9, 12 ],
+    [ -2, -5, -8, -13, 1, 4, 7, 12 ],
+    [ -2, -4, -6, -13, 1, 3, 5, 12 ],
+    [ -3, -6, -8, -12, 2, 5, 7, 11 ],
+    [ -3, -7, -9, -11, 2, 6, 8, 10 ],
+    [ -4, -7, -8, -11, 3, 6, 7, 10 ],
+    [ -3, -5, -8, -11, 2, 4, 7, 10 ],
+    [ -2, -6, -8, -10, 1, 5, 7, 9 ],
+    [ -2, -5, -8, -10, 1, 4, 7, 9 ],
+    [ -2, -4, -8, -10, 1, 3, 7, 9 ],
+    [ -2, -5, -7, -10, 1, 4, 6, 9 ],
+    [ -3, -4, -7, -10, 2, 3, 6, 9 ],
+    [ -1, -2, -3, -10, 0, 1, 2, 9 ],
+    [ -4, -6, -8, -9,  3, 5, 7, 8 ],
+    [ -3, -5, -7, -9,  2, 4, 6, 8 ],
+];
+
+var w = 4;
+function draw_line(y)
+{
+  ctx.fillStyle = 'yellow';
+  ctx.fillRect(0, (w)*6*y, w*256, w);
+}
+function draw_sq(x, y)
+{
+  ctx.fillStyle = 'green';
+  ctx.fillRect((w)*x, (w)*6*y, w, w);
+}
+
+
+function draw_sq_compute(x, y)
+{
+  ctx.fillStyle = '#66ff99';
+  ctx.fillRect((w)*x, (w)*6*y+w, w, w);
+}
+function draw_sq_compute2(x, y)
+{
+  ctx.fillStyle = 'red';
+  ctx.fillRect((w)*x, (w)*6*y+w, w, w);
+}
+function draw_line_compute(diff)
+{
+  var y = 23;
+  ctx.fillStyle = 'yellow';
+  ctx.fillRect(0, (w)*6*y, w*256, w);
+  ctx.fillStyle = '#66ff99';
+  var left = Math.floor((256 - (diff+1)) / 2);
+  ctx.fillRect(w*left, (w)*6*y, w*(diff+1), w);
+  var step = (diff) / 15;
+  var values = [];
+  for (var i=0; i<16; ++i)
+  {
+    var l = Math.round(left + step*i);
+    //draw_sq_compute(l, y);
+    draw_sq(l, y);
+    values.push(l);
+  }
+  return values;
+}
+
+
+function drawCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = 'green';
+  //ctx.fillRect(10, 10, 100, 100);
+  for (var i=0; i<g_tableAlpha.length; ++i)
+  {
+      var tab = g_tableAlpha[i];
+    tab.sort((a, b) => a - b);
+    var diff = tab[tab.length-1] - tab[0];
+    var min = tab[0];
+    var step = 255.0 / diff;
+    draw_line(i);
+    for (var j=0; j<tab.length; ++j)
+    {
+      var v = tab[j] - min;
+      v = Math.round(v * step);
+      draw_sq(v, i);
+    }
+  }
+}
+window.addEventListener('load', drawCanvas);
+
+function clamp255(v)
+{
+    return (v > 255) ? 255 : (v < 0 ? 0 : v);
+}
+
+function findMinDiff(x, xx)
+{
+    var diff = 999999999, pos = 0;
+    for (var i=0; i<xx.length; ++i)
+    {
+        var d = (xx[i] - x) * (xx[i] - x);
+        if (d < diff)
+        {
+            diff = d;
+            pos = i;
+        }
+    }
+    return [diff, pos];
+}
+
+function findBestMatch(diff, values, table, matchLeft, matchRight)
+{
+    var tab = g_tableAlpha[table];
+    var mindiff = 9999999999, minres = [], minxx = [];
+    // needed range [p0 .. p1]
+    var p0 = Math.floor((256 - (diff+1)) / 2);
+    var p1 = p0 + diff;
+    for (var m = 1; m < 16; ++m)
+    {
+        for (var o = p0; o < p1+1; ++o)
+        //for (var o = -1; o < (diff+1)/2; ++o)
+        {
+            // clamp255((base_codeword)+modifier*multiplier)
+            //var base = Math.floor((p0 + p1 + 1) / 2) + o;
+            var base = o;
+            if (base > 255)
+                continue;
+            var xx = [];
+            for (var i = 0; i < 8; ++i)
+            {
+                var idx = tab[i];
+                var x = clamp255(base + idx * m);
+                xx.push(x);
+            }
+            var diff = 0, res = [];
+            for (i=0; i<values.length; ++i)
+            {
+                var d = findMinDiff(values[i], xx);
+                res.push(d);
+                diff += d[0];
+            }
+            var leftOk = !matchLeft || res[0][0] == 0;
+            var rightOk = !matchRight || res[values.length-1][0] == 0;
+            if (leftOk && rightOk && diff < mindiff)
+            {
+                mindiff = diff;
+                minres = res;
+                minxx = xx;
+            }
+        }
+    }
+    return {mindiff, minres, minxx};
+}
+
+function refresh()
+{
+    setTimeout(compute, 1);
+}
+function compute()
+{
+    drawCanvas();
+    var diff = Math.max(Math.min(parseInt(computeValue.value), 255), 0);
+    var table = parseInt(form.table.value);
+    computeValue.value = diff;
+    ctx.fillStyle = 'black';
+    ctx.font = "14px Arial";
+    ctx.fillText("Compute for diff: "+diff,10,105*w);
+    var values = draw_line_compute(diff);
+
+    var matchLeft = !!matchLeftBox.checked;
+    var matchRight = !!matchRightBox.checked;
+    if (!(table >= 0 && table < 16))
+        return;
+
+    var {mindiff, minres, minxx} = findBestMatch(diff, values, table, matchLeft, matchRight);
+    for (var i=0; i<minres.length; ++i)
+    {
+        var y = 23;
+        draw_sq_compute2(minxx[minres[i][1]], y);
+    }
+    ctx.fillStyle = 'black';
+    ctx.font = "14px Arial";
+    ctx.fillText("err: "+mindiff,10,115*w);
+}
+computeButton.onclick = refresh;
+
+for (var table = 0 ; table < document.getElementsByName('table').length; table++)
+{
+    document.getElementsByName('table')[table].onclick = refresh;
+}
+matchLeftBox.onclick = refresh;
+matchRightBox.onclick = refresh;
+
+
+</script>
+</body>
+</html>
