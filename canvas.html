@@ -150,12 +150,92 @@ function drawCanvas()
 }
 window.addEventListener('load', drawCanvas);
 
+var xxx = 0;
 function generateValues(diff)
 {
     var left = getLeft(diff);
-    var step = diff / 15, values = [];
-    for (var i=0; i<16; ++i)
-        values.push(Math.round(left + step*i));
+    var diff4 = diff / 4;
+    var diff34 = diff - diff4;
+    var diff2 = diff / 2;
+    var step = diff / 15;
+    var step1 = diff4 / 8;
+    var step3 = diff34 / 8;
+    var step2 = diff2 / 15;
+    var values = [];
+    if (xxx == 0)
+    {xxx=1;
+        for (var i=0; i<16; ++i)
+            values.push(Math.round(left + step*i));
+    }
+    else if (xxx == 1)
+    {xxx=2;
+        for (var i=0; i<8; ++i)
+            values.push(Math.round(left + step1*i));
+        for (var i=0; i<8; ++i)
+            values.push(Math.round(left + step1*8 + step3*(i+1)));
+    }
+    else if (xxx == 2)
+    {xxx=3;
+        for (var i=0; i<3; ++i)
+            values.push(Math.round(left + step3*i));
+        for (var i=0; i<8; ++i)
+            values.push(Math.round(left + step3*3 + step1*i));
+        for (var i=0; i<5; ++i)
+            values.push(Math.round(left + step3*3 + step1*8 + step3*(i+1)));
+    }
+    else if (xxx == 3)
+    {xxx=4;
+        for (var i=0; i<5; ++i)
+            values.push(Math.round(left + step3*i));
+        for (var i=0; i<8; ++i)
+            values.push(Math.round(left + step3*5 + step1*i));
+        for (var i=0; i<3; ++i)
+            values.push(Math.round(left + step3*5 + step1*8 + step3*(i+1)));
+    }
+    else if (xxx == 4)
+    {xxx=5;
+        for (var i=0; i<8; ++i)
+            values.push(Math.round(left + step3*i));
+        for (var i=0; i<8; ++i)
+            values.push(Math.round(left + step3*8 + step1*(i+1)));
+    }
+    else if (xxx == 5)
+    {xxx=6;
+        for (var i=0; i<8; ++i)
+            values.push(Math.round(left + step2*i));
+        for (var i=0; i<8; ++i)
+            values.push(Math.round(left + step2*8 + diff2 + step2*i));
+    }
+    else if (xxx == 6)
+    {xxx=7;
+        values.push(Math.round(left));
+        for (var i=1; i<15; ++i)
+            values.push(Math.round(left + diff4 + step2*i));
+        values.push(Math.round(left + diff4 + diff4 + step2*i));
+    }
+    else if (xxx == 7)
+    {xxx=8;
+        for (var i=0; i<15; ++i)
+            values.push(Math.round(left + step2*i));
+        values.push(Math.round(left + diff2 + step2*i));
+    }
+    else if (xxx == 8)
+    {xxx=0;
+        values.push(Math.round(left));
+        for (var i=1; i<16; ++i)
+            values.push(Math.round(left + diff2 + step2*i));
+    }
+    if (config_8)
+    {
+        values.splice(14, 1);
+        values.splice(12, 1);
+        values.splice(10, 1);
+        values.splice(9, 1);
+        values.splice(7, 1);
+        values.splice(5, 1);
+        values.splice(3, 1);
+        values.splice(1, 1);
+    }
     return values;
 }
 
@@ -204,8 +284,9 @@ function findBestMatch(diff, values, matchLeft, matchRight, table, mult)
         for (var m = (mult>=1 ? mult : 1); m <= (mult>=1 ? mult : 15); ++m)
         {
             var tabm = tab.map((x) => x * m);
-            for (var o = p0; o < p1+1; ++o)
+            //for (var o = p0; o < p1+1; ++o)
             //for (var o = p0; o < p0 + diff/3; ++o)
+            for (var o = 0; o < 256; ++o)
             {
                 var base = o;
                 if (base > 255)
