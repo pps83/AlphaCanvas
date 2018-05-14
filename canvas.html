@@ -151,6 +151,7 @@ function drawCanvas()
 window.addEventListener('load', drawCanvas);
 
 var xxx = 0;
+var config_8 = 0;
 function generateValues(diff)
 {
     var left = getLeft(diff);
@@ -265,6 +266,20 @@ function findMinDiff2(values, xx)
             res.push(xx[p]);
     }
     return [diff, res];
+}
+
+function getError(values, base, m, t)
+{
+    var tabm = g_tableAlpha[t].map((x) => x * m);;
+    var xx = [];
+    for (var i = 0; i < 8; ++i)
+    {
+        var x = clamp255(base + tabm[i]);
+        if (xx.length==0 || xx[xx.length-1] != x)
+            xx.push(x);
+    }
+    var [mdiff, res] = findMinDiff2(values, xx);
+    return mdiff;
 }
 
 function findBestMatch(diff, values, matchLeft, matchRight, table, mult)
